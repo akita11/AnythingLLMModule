@@ -22,4 +22,15 @@ SerialReceiveResult receive_data() {
     }
 }
 
+sendToPCResult sendToPC(const String& sending_json) {
+    Serial.println(sending_json);
+    return SEND_TO_PC_SUCCESS;
+}
+
+sendToPCResult sendToPCwithResponse(const String& sending_json, const bool multiple_response = false) {
+    Serial.println(sending_json);
+    return SEND_TO_PC_SUCCESS;
+}
+
+
 #endif // !USE_WIFI_FOR_LLM_COMMUNICATION

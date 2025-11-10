@@ -8,6 +8,8 @@ const CRGB COLOR_OK = CRGB(0, 255, 0); // 緑
 
 CRGB leds[LED_NUM];
 
+String using_model_name = "";
+
 void blinkLED(const CRGB& color, const uint8_t& times, const uint16_t& interval_ms, const bool hold) {
     for (uint8_t i = 0; i < times; i++) {
         leds[0] = color;
@@ -72,3 +74,24 @@ initSPIFFSResult initSPIFFS() {
     Serial.println("SPIFFS mounted successfully.");
   }
 }
+
+void sendToM5(const ResponseMsg_t& response_msg) {
+    String response_json = "{\"request_id\":\"" + response_msg.request_id + "\",\"work_id\":\"" + response_msg.work_id + "\",\"object\":\"" + response_msg.object + "\"";
+    
+    // inference_dataが空でない場合はdataフィールドを追加
+    if (response_msg.inference_data.delta.length() > 0 || response_msg.inference_data.finish) {
+        // deltaフィールドのエスケープ処理（JSONの特殊文字をエスケープ）
+        String delta_escaped = response_msg.inference_data.delta;
+        delta_escaped.replace("\\", "\\\\");
+        delta_escaped.replace("\"", "\\\"");
+        delta_escaped.replace("\n", "\\n");
+        delta_escaped.replace("\r", "\\r");
+        delta_escaped.replace("\t", "\\t");
+        
+        response_json += ",\"data\":{\"delta\":\"" + delta_escaped + "\",\"index\":" + String(response_msg.inference_data.index) + ",\"finish\":" + (response_msg.inference_data.finish ? "true" : "false") + "}";
+    }
+    
+    response_json += ",\"error\":{\"code\":" + String(response_msg.error.code) + ",\"message\":\"" + response_msg.error.message + "\"}}";
+    Serial2.print(response_json);
+}
+   
