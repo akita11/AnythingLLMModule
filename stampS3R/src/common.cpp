@@ -9,6 +9,7 @@ const CRGB COLOR_OK = CRGB(0, 255, 0); // 緑
 CRGB leds[LED_NUM];
 
 String using_model_name = "";
+String current_work_id = "";
 
 void blinkLED(const CRGB& color, const uint8_t& times, const uint16_t& interval_ms, const bool hold) {
     for (uint8_t i = 0; i < times; i++) {
@@ -92,6 +93,8 @@ void sendToM5(const ResponseMsg_t& response_msg) {
     }
     
     response_json += ",\"error\":{\"code\":" + String(response_msg.error.code) + ",\"message\":\"" + response_msg.error.message + "\"}}";
-    Serial2.print(response_json);
+    Serial2.println(response_json);
+    Serial.print("[JSON] Sent to M5: ");
+    Serial.println(response_json);
 }
    

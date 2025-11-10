@@ -99,6 +99,7 @@ enum LLM_Status
 };
 
 extern String using_model_name;
+extern String current_work_id;
 
 struct OllamaInferenceCommand
 {

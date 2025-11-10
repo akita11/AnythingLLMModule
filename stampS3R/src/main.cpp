@@ -189,8 +189,7 @@ void setup()
 
   Serial.begin(9600);
   // Serial2.begin(115200, SERIAL_8N1, RX, TX) の順序
-  // 受信できているのでRX=5は正しい。TXピンを確認する必要がある
-  Serial2.begin(115200, SERIAL_8N1, 5, 7);
+  Serial2.begin(115200, SERIAL_8N1, 7, 5);
 
   initLED();
   led_sayStart_initialize();
@@ -214,7 +213,8 @@ void loop()
     // JSONのパース成功
     Serial.println("[JSON] Parsed successfully:");
 
-    Serial2.print("Hello");
+    Serial.println("[JSON] Sending handshake: Hello");
+    Serial2.println("Hello");
 
     // JSONを整形して出力
     serializeJsonPretty(doc, Serial);
@@ -349,6 +349,7 @@ void loop()
               // work_idを生成（例: "llm_12345"）
               String generated_work_id = "llm_" + String(millis() % 100000);
               response_msg.work_id = generated_work_id;
+              current_work_id = generated_work_id;
               response_msg.object = "llm.setup";
               response_msg.error.code = 0;
               response_msg.error.message = "";
@@ -383,7 +384,7 @@ void loop()
               
               response_json += ",\"error\":{\"code\":" + String(response_msg.error.code) + ",\"message\":\"" + response_msg.error.message + "\"}}";
               Serial.println(response_json);
-              Serial2.print(response_json);
+              Serial2.println(response_json);
 
               // PCに送る（適当に受信したJSONをそのまま送る）
               String json_str;

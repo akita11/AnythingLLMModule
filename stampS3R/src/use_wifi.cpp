@@ -8,7 +8,7 @@ String wifi_ssid = WIFI_SSID;
 String wifi_password = WIFI_PASSWORD;
 String ap_ssid = AP_SSID;
 String ap_password = AP_PASSWORD;
-String host_ollama_url = String("http://") + String(HOST_IP) + String(":") + String(HOST_OLLAMA_PORT);
+String host_ollama_url = String("http://") + String(HOST_IP) + ":" + String(HOST_OLLAMA_PORT);
 #include "WiFi.h"
 #include "HTTPClient.h"
 #include <ArduinoJson.h>
@@ -241,7 +241,6 @@ LLM_Status llm_inference_streaming(const OllamaInferenceCommand& command) {
                         // responseフィールドを取得してUARTに送信
                         if (responseDoc["response"].is<String>()) {
                             String response_text = responseDoc["response"].as<String>();
-                            Serial2.print(response_text);
                             Serial.print("[JSON] Stream chunk: ");
                             Serial.println(response_text);
                             ResponseMsg_t_error error_val;
@@ -253,11 +252,16 @@ LLM_Status llm_inference_streaming(const OllamaInferenceCommand& command) {
                             inference_data_val.finish = false;
                             ResponseMsg_t response_msg;
                             response_msg.request_id = "llm_inference";
-                            response_msg.work_id = "llm_" + String(millis() % 100000);
+                            String work_id = current_work_id.length() > 0 ? current_work_id : ("llm_" + String(millis() % 100000));
+                            response_msg.work_id = work_id;
+                            if (current_work_id.length() == 0) {
+                                current_work_id = work_id;
+                            }
                             response_msg.object = "llm.utf-8.stream";
                             response_msg.error = error_val;
                             response_msg.inference_data = inference_data_val;
                             sendToM5(response_msg);
+
                         }
                         
                         // doneフィールドをチェック
@@ -286,7 +290,11 @@ LLM_Status llm_inference_streaming(const OllamaInferenceCommand& command) {
                             inference_data_val.finish = true;
                             ResponseMsg_t response_msg;
                             response_msg.request_id = "llm_inference";
-                            response_msg.work_id = "llm_" + String(millis() % 100000);
+                            String work_id = current_work_id.length() > 0 ? current_work_id : ("llm_" + String(millis() % 100000));
+                            response_msg.work_id = work_id;
+                            if (current_work_id.length() == 0) {
+                                current_work_id = work_id;
+                            }
                             response_msg.object = "llm.utf-8.stream";
                             response_msg.error = error_val;
                             response_msg.inference_data = inference_data_val;
