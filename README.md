@@ -27,6 +27,7 @@ Mbusコネクタをはんだ付け、または2.54mmの2列x15ピンの低プロ
 
 最後に[2.54mmピンヘッダ実装済みのStampS3A](https://www.switch-science.com/products/10734)を取り付けて完成です。
 
+<img src="https://github.com/akita11/AnythingLLMModule/blob/main/AnythingLLMModule_build3.jpg" width="240px">
 
 ## Author
 
