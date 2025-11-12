@@ -1,5 +1,6 @@
 #include "common.h"
 #include <M5Unified.h>
+#include <cstring>
 
 const CRGB COLOR_ACCESSED = CRGB(0, 255, 255); // シアン
 const CRGB COLOR_RUNNING = CRGB(255, 255, 128); // 黄色っぽい白
@@ -45,6 +46,153 @@ void led_sayError_initialize() {
 
 void led_saySuccess_initialize() {
     blinkLED(COLOR_OK, 3, 100);
+}
+
+namespace {
+
+char jsonBuffer[JSON_BUFFER_SIZE];
+size_t jsonBufferIndex = 0;
+unsigned long lastCharTime = 0;
+int openBraces = 0;
+bool inString = false;
+bool escaped = false;
+unsigned long parseErrorTime = 0;
+
+} // namespace
+
+void resetJsonBuffer()
+{
+    jsonBufferIndex = 0;
+    jsonBuffer[0] = '\0';
+    lastCharTime = 0;
+    openBraces = 0;
+    inString = false;
+    escaped = false;
+    parseErrorTime = 0;
+}
+
+bool readJsonMessage(JsonDocument &doc)
+{
+    if (jsonBufferIndex > 0 && millis() - lastCharTime > JSON_TIMEOUT_MS)
+    {
+        Serial.println("[JSON] Timeout, resetting buffer");
+        resetJsonBuffer();
+    }
+
+    if (parseErrorTime > 0)
+    {
+        if (millis() - parseErrorTime > PARSE_ERROR_WAIT_MS)
+        {
+            Serial.println("[JSON] Parse error timeout, resetting buffer");
+            resetJsonBuffer();
+        }
+        else if (Serial2.available())
+        {
+            parseErrorTime = 0;
+        }
+    }
+
+    while (Serial2.available())
+    {
+        char c = static_cast<char>(Serial2.read());
+        lastCharTime = millis();
+
+        if (parseErrorTime > 0)
+        {
+            parseErrorTime = 0;
+        }
+
+        if (c == '\n' || c == '\r')
+        {
+            resetJsonBuffer();
+            continue;
+        }
+
+        if (jsonBufferIndex >= JSON_BUFFER_SIZE - 1)
+        {
+            Serial.println("[JSON] Buffer overflow, resetting");
+            resetJsonBuffer();
+            continue;
+        }
+
+        if (escaped)
+        {
+            escaped = false;
+            jsonBuffer[jsonBufferIndex++] = c;
+            continue;
+        }
+
+        if (c == '\\')
+        {
+            escaped = true;
+            jsonBuffer[jsonBufferIndex++] = c;
+            continue;
+        }
+
+        if (c == '"')
+        {
+            inString = !inString;
+            jsonBuffer[jsonBufferIndex++] = c;
+            continue;
+        }
+
+        jsonBuffer[jsonBufferIndex++] = c;
+
+        if (!inString)
+        {
+            if (c == '{')
+            {
+                openBraces++;
+            }
+            else if (c == '}')
+            {
+                openBraces--;
+
+                if (openBraces == 0)
+                {
+                    jsonBuffer[jsonBufferIndex] = '\0';
+
+                    char *start = jsonBuffer;
+                    while (*start == ' ' || *start == '\t')
+                    {
+                        start++;
+                    }
+                    char *end = jsonBuffer + jsonBufferIndex - 1;
+                    while (end > start && (*end == ' ' || *end == '\t' || *end == '\0'))
+                    {
+                        end--;
+                    }
+                    *(end + 1) = '\0';
+
+                    if (std::strlen(start) > 0)
+                    {
+                        DeserializationError error = deserializeJson(doc, start);
+
+                        if (error)
+                        {
+                            Serial.print("[JSON] Parse error: ");
+                            Serial.println(error.c_str());
+                            Serial.print("[JSON] Received: ");
+                            Serial.println(start);
+                            parseErrorTime = millis();
+                            return false;
+                        }
+
+                        resetJsonBuffer();
+                        return true;
+                    }
+
+                    resetJsonBuffer();
+                }
+                else if (openBraces < 0)
+                {
+                    resetJsonBuffer();
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 

@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include "config.h"
+#include <ArduinoJson.h>
 #include <FastLED.h>
 #include <SPIFFS.h>
 
@@ -106,5 +107,12 @@ struct OllamaInferenceCommand
     String model;
     String prompt;
 };
+
+constexpr size_t JSON_BUFFER_SIZE = 2048;
+constexpr unsigned long JSON_TIMEOUT_MS = 1000;
+constexpr unsigned long PARSE_ERROR_WAIT_MS = 50;
+
+void resetJsonBuffer();
+bool readJsonMessage(JsonDocument &doc);
 
 #endif // COMMON_H

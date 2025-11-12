@@ -14,174 +14,6 @@
 #include "use_serial.h"
 #endif
 
-// JSON読み取り用の設定
-#define JSON_BUFFER_SIZE 2048
-#define JSON_TIMEOUT_MS 1000   // 1秒でタイムアウト
-#define PARSE_ERROR_WAIT_MS 50 // パースエラー後の待機時間（続きが来るか待つ）
-
-// JSON読み取り用のバッファ
-char jsonBuffer[JSON_BUFFER_SIZE];
-size_t jsonBufferIndex = 0;
-unsigned long lastCharTime = 0;
-static int openBraces = 0;               // 括弧のバランスを追跡
-static bool inString = false;            // 文字列内かどうか
-static bool escaped = false;             // エスケープ文字の次の文字かどうか
-static unsigned long parseErrorTime = 0; // パースエラーが発生した時刻（0ならエラーなし）
-
-// JSONバッファをリセット
-void resetJsonBuffer()
-{
-  jsonBufferIndex = 0;
-  jsonBuffer[0] = '\0';
-  lastCharTime = 0;
-  openBraces = 0;
-  inString = false;
-  escaped = false;
-  parseErrorTime = 0;
-}
-
-// 完全なJSONメッセージを読み取る（括弧のバランスで終端判定）
-bool readJsonMessage(JsonDocument &doc)
-{
-  // タイムアウトチェック
-  if (jsonBufferIndex > 0 && millis() - lastCharTime > JSON_TIMEOUT_MS)
-  {
-    Serial.println("[JSON] Timeout, resetting buffer");
-    resetJsonBuffer();
-  }
-
-  // パースエラー後の待機チェック（50ms待って続きが来なかったら破棄）
-  if (parseErrorTime > 0)
-  {
-    if (millis() - parseErrorTime > PARSE_ERROR_WAIT_MS)
-    {
-      // 続きが来なかったので破棄
-      Serial.println("[JSON] Parse error timeout, resetting buffer");
-      resetJsonBuffer();
-    }
-    else
-    {
-      // まだ待機中、続きが来る可能性がある
-      // 新しいデータが来たらエラー時刻をリセット（続きが来たと判断）
-      if (Serial2.available())
-      {
-        parseErrorTime = 0; // 続きが来たのでエラー時刻をリセット
-      }
-    }
-  }
-
-  // シリアルからデータを読み取る
-  while (Serial2.available())
-  {
-    char c = (char)Serial2.read();
-    lastCharTime = millis();
-
-    // 新しいデータが来たらパースエラー時刻をリセット（続きが来たと判断）
-    if (parseErrorTime > 0)
-    {
-      parseErrorTime = 0;
-    }
-
-    // 改行が来たらリセット（改行で区切られている想定）
-    if (c == '\n' || c == '\r')
-    {
-      resetJsonBuffer();
-      continue;
-    }
-
-    // バッファオーバーフロー対策
-    if (jsonBufferIndex >= JSON_BUFFER_SIZE - 1)
-    {
-      Serial.println("[JSON] Buffer overflow, resetting");
-      resetJsonBuffer();
-      continue;
-    }
-
-    // エスケープ文字の処理
-    if (escaped)
-    {
-      escaped = false;
-      jsonBuffer[jsonBufferIndex++] = c;
-      continue;
-    }
-
-    if (c == '\\')
-    {
-      escaped = true;
-      jsonBuffer[jsonBufferIndex++] = c;
-      continue;
-    }
-
-    // 文字列の開始/終了を判定
-    if (c == '"')
-    {
-      inString = !inString;
-      jsonBuffer[jsonBufferIndex++] = c;
-      continue;
-    }
-
-    // 文字をバッファに追加
-    jsonBuffer[jsonBufferIndex++] = c;
-
-    // 文字列外でのみ括弧のバランスをチェック
-    if (!inString)
-    {
-      if (c == '{')
-      {
-        openBraces++;
-      }
-      else if (c == '}')
-      {
-        openBraces--;
-
-        // 括弧のバランスが取れたら終端と判定
-        if (openBraces == 0)
-        {
-          jsonBuffer[jsonBufferIndex] = '\0';
-
-          // 先頭・末尾の空白を削除
-          char *start = jsonBuffer;
-          while (*start == ' ' || *start == '\t')
-            start++;
-          char *end = jsonBuffer + jsonBufferIndex - 1;
-          while (end > start && (*end == ' ' || *end == '\t' || *end == '\0'))
-            end--;
-          *(end + 1) = '\0';
-
-          if (strlen(start) > 0)
-          {
-            DeserializationError error = deserializeJson(doc, start);
-
-            if (error)
-            {
-              // パースエラー：50ms待って続きが来るか確認
-              Serial.print("[JSON] Parse error: ");
-              Serial.println(error.c_str());
-              Serial.print("[JSON] Received: ");
-              Serial.println(start);
-              parseErrorTime = millis(); // エラー時刻を記録
-              return false;              // バッファは破棄せず、続きを待つ
-            }
-
-            // パース成功：即座にバッファを破棄
-            resetJsonBuffer();
-            return true;
-          }
-
-          resetJsonBuffer();
-        }
-        else if (openBraces < 0)
-        {
-          // 括弧のバランスが崩れたらリセット
-          resetJsonBuffer();
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
 void setup()
 {
   auto cfg = M5.config();
@@ -263,7 +95,7 @@ void loop()
     // }
 
     // 返事用のJSONの元の構造体 をひとつ作る
-    ResponseMsg_t response_msg;
+    ResponseMsg_t response_msg = {};
 
     if (doc.containsKey("work_id") && doc.containsKey("action"))
     {
@@ -365,26 +197,7 @@ void loop()
               Serial.print(response_msg.error.code);
               Serial.println();
 
-              // sendToM5(response_msg);
-              // JSON文字列を生成（sendToM5と同じロジック）
-              String response_json = "{\"request_id\":\"" + response_msg.request_id + "\",\"work_id\":\"" + response_msg.work_id + "\",\"object\":\"" + response_msg.object + "\"";
-              
-              // inference_dataが空でない場合はdataフィールドを追加
-              if (response_msg.inference_data.delta.length() > 0 || response_msg.inference_data.finish) {
-                  // deltaフィールドのエスケープ処理（JSONの特殊文字をエスケープ）
-                  String delta_escaped = response_msg.inference_data.delta;
-                  delta_escaped.replace("\\", "\\\\");
-                  delta_escaped.replace("\"", "\\\"");
-                  delta_escaped.replace("\n", "\\n");
-                  delta_escaped.replace("\r", "\\r");
-                  delta_escaped.replace("\t", "\\t");
-                  
-                  response_json += ",\"data\":{\"delta\":\"" + delta_escaped + "\",\"index\":" + String(response_msg.inference_data.index) + ",\"finish\":" + (response_msg.inference_data.finish ? "true" : "false") + "}";
-              }
-              
-              response_json += ",\"error\":{\"code\":" + String(response_msg.error.code) + ",\"message\":\"" + response_msg.error.message + "\"}}";
-              Serial.println(response_json);
-              Serial2.println(response_json);
+              sendToM5(response_msg);
 
               // PCに送る（適当に受信したJSONをそのまま送る）
               String json_str;
@@ -429,9 +242,6 @@ void loop()
     }
     // LEDで成功を表示
     blinkLED(COLOR_OK, 1, 50);
-    M5.Lcd.clear();
-    delay(50);
-    M5.Lcd.fillScreen(YELLOW);
   }
 
   delay(10);
