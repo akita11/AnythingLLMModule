@@ -4,7 +4,7 @@
 
 <img src="https://github.com/akita11/AnythingLLMModule/blob/main/AnythingLLMModule_StampS3A_2.jpg" width="240px">
 
-M5Stack Coreシリーズに接続し、他のPC等で動作しているAIモデル（大規模言語モデル社(LLM)）を、M5Stackから使用できるようにするModuleです。M5Stackとは、M5Stack社のLLM Moduleと同等の接続となるため、ソフトウエア的にはLLM Moduleと同様に扱うことができます。他のPCのLLMへはUSBやWiFiで接続します。M5StampS3Aに必要なソフトウエアを書き込んで使用してください。StampS3Aの取り付け方法が2種類あります。
+M5Stack Coreシリーズに接続し、他のPC等で動作しているAIモデル（大規模言語モデル(LLM)）を、M5Stackから使用できるようにするModuleです。M5Stackとは、M5Stack社のLLM Moduleと同等の接続となるため、ソフトウエア的にはLLM Moduleと同様に扱うことができます。他のPCのLLMへはUSBやWiFiで接続します。M5StampS3Aに必要なソフトウエアを書き込んで使用してください。StampS3Aの取り付け方法が2種類あります。
 
 ## StampS3Aを直接とりつけ
 
@@ -27,6 +27,28 @@ Mbusコネクタをはんだ付け、または2.54mmの2列x15ピンの低プロ
 
 最後に[2.54mmピンヘッダ実装済みのStampS3A](https://www.switch-science.com/products/10734)を取り付けて完成です。
 
+## ソフトウエア
+
+Moduleに書き込む専用のファームウェアがあります。CoreからはLLM-Moduleのライブラリで通信できるように **「一部」** なっています。PC等との通信はWiFiまたはシリアル通信が選択できます。
+
+### Module側
+
+**USB-Cコネクタを接続する時に、ハンダ付けが取れないように注意してください！！！**  
+**はがれやすい場合があるので、かならずStampS3を手で押さえて抜き差しすること！！！**  
+<img src="https://github.com/akita11/AnythingLLMModule/blob/main/NukiSashi.jpg" width="240px">
+
+PlatformIOで[stampS3R](https://github.com/akita11/AnythingLLMModule/tree/main/stampS3R)をビルドして、基板上のM5StampS3に書き込みます。  
+このとき、`secrets.h`でPC等のローカルIPアドレス、WiFiのSSID/パスワードを設定してください。  
+
+### PC側
+
+現在はLLMサーバーとしてOllamaのみサポートしています。  
+シリアルで接続する場合は[serial](https://github.com/akita11/AnythingLLMModule/tree/main/serial)にあるスクリプトを動かして待機させてください。  
+WiFiで接続する場合はOllamaの設定から`Expose Ollama to the network`を有効にしてください。  
+
+### サンプル
+
+サンプルプログラムを用意しています。お使いのOllamaからアクセス可能なモデル名に変更してお試しください。画面に`ready`と表示されたら、シリアルモニタからテキストを入力してEnterキーを押すと、会話ができます。
 
 ## Author
 

@@ -52,48 +52,6 @@ void loop()
     serializeJsonPretty(doc, Serial);
     Serial.println();
 
-    // if (doc.containsKey("data"))
-    // {
-    //   Serial.println("[JSON] Data field found");
-    // }
-
-    //     static const char* _cmd_ping =
-    //     "{\"request_id\":\"sys_ping\",\"work_id\":\"sys\",\"action\":\"ping\",\"object\":\"None\",\"data\":\"None\"}";
-    // static const char* _cmd_reset =
-    //     "{\"request_id\":\"sys_reset\",\"work_id\":\"sys\",\"action\":\"reset\",\"object\":\"None\",\"data\":\"None\"}";
-    // static const char* _cmd_reboot =
-    //     "{\"request_id\":\"sys_reboot\",\"work_id\":\"sys\",\"action\":\"reboot\",\"object\":\"None\",\"data\":\"None\"}";
-    // static const char* _cmd_version =
-    //     "{\"request_id\":\"sys_version\",\"work_id\":\"sys\",\"action\":\"version\",\"object\":\"None\",\"data\":\"None\"}";
-
-    // [JSON] Parsed successfully:
-    // {
-    //   "request_id": "sys_version",
-    //   "work_id": "sys",
-    //   "action": "version",
-    //   "object": "None",
-    //   "data": "None"
-    // }
-    // [JSON] Data field found
-    // [JSON] Parsed successfully:
-    // {
-    //   "request_id": "sys_ping",
-    //   "work_id": "sys",
-    //   "action": "ping",
-    //   "object": "None",
-    //   "data": "None"
-    // }
-
-    // {
-    //   "request_id": "sys_ping",  // 送信したリクエストIDと一致すること
-    //   "work_id": "sys",
-    //   "object": "None",
-    //   "error": {
-    //     "code": 0,              // これが0ならOK、負数ならエラー
-    //     "message": ""
-    //   }
-    // }
-
     // 返事用のJSONの元の構造体 をひとつ作る
     ResponseMsg_t response_msg = {};
 
