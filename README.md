@@ -30,5 +30,5 @@ Mbusコネクタをはんだ付け、または2.54mmの2列x15ピンの低プロ
 
 ## Author
 
-Junichi Akita (@akita11) / akita@ifdl.jp
-Ogawa3427
+Designed by Junichi Akita (@akita11) / akita@ifdl.jp
+Programmed by Ogawa3427
