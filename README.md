@@ -48,9 +48,15 @@ WiFiで接続する場合はOllamaの設定から`Expose Ollama to the network`�
 
 ### サンプル
 
-サンプルプログラムを用意しています。お使いのOllamaからアクセス可能なモデル名に変更してお試しください。画面に`ready`と表示されたら、シリアルモニタからテキストを入力してEnterキーを押すと、会話ができます。
+サンプルプログラム([coreS3_test](https://github.com/akita11/AnythingLLMModule/tree/main/coreS3_test))を用意しています。お使いのOllamaからアクセス可能なモデル名に変更してお試しください。画面に`ready`と表示されたら、シリアルモニタからテキストを入力してEnterキーを押すと、会話ができます。
+
+### API対応状況(2025/11/20)
+
+- [o] module_llm.checkConnection
+- [o] module_llm.llm.setup
+- [o] module_llm.llm.inferenceAndWaitResult
 
 ## Author
 
-Designed by Junichi Akita (@akita11) / akita@ifdl.jp
-Programmed by Ogawa3427
+Designed by Junichi Akita (@akita11) / akita@ifdl.jp  
+Programmed by Ogawa3427 / ogawa3427@ifdl.jp  
