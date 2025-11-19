@@ -1,0 +1,7 @@
+#ifndef USE_STATION_MODE
+#define USE_STATION_MODE true
+#endif
+
+#ifndef USE_WIFI_FOR_LLM_COMMUNICATION
+#define USE_WIFI_FOR_LLM_COMMUNICATION true
+#endif
